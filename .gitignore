@@ -15,6 +15,7 @@ target/
 
 # Environment variables
 .env
+.env.example
 
 ### Eclipse ###
 .apt_generated
