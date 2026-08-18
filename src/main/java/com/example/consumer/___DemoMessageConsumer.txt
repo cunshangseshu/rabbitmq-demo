@@ -1,0 +1,63 @@
+package com.example.consumer;
+
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.stereotype.Component;
+
+/**
+ * -- RabbitMQ 消息消费者
+ * -- Consumer 的作用：
+ * RabbitMQ Queue
+ * ↓
+ * Consumer 获取消息
+ * ↓
+ * 执行业务代码
+ * ↓
+ * 消费完成
+ * -- 当前我们先使用 Spring AMQP 默认的 ACK 机制，后面我们会专门学习：
+ * 1. 自动 ACK
+ * 2. 手动 ACK
+ * 3. NACK
+ * 4. Reject
+ * 5. 消费失败
+ * 6. 消息重试
+ * 7. 死信队列
+ */
+@Component
+public class ___DemoMessageConsumer {
+    /**
+     * -- 监听 RabbitMQ 队列：queues = "demo.hello.queue"
+     * -- 意思就是：告诉 Spring“请帮我创建一个消费者，一直监听 demo.hello.queue。”
+     * 当这个 Queue 中出现消息时，Spring 就会自动调用下面这个方法。
+     *
+     * @param message RabbitMQ 中取出来的消息内容
+     */
+    @RabbitListener(
+            queues = "demo.hello.queue",
+            ackMode = "MANUAL"
+    )
+    public void receiveMessage(String message) throws InterruptedException {
+
+        /*
+         * 当程序执行到这里时，说明 RabbitMQ 已经把消息交给 Consumer。
+         * 此时你去 RabbitMQ Management 看：Ready   = 0   Unacked = 1
+         * 因为：消息已经被 Consumer 拿走，但是 Consumer 还没有处理完成。
+         */
+        System.out.println("Consumer 收到消息：" + message);
+
+        /*
+         * 故意暂停 10 秒。
+         * 正常项目当然不会无缘无故 sleep，我们现在这样做纯粹是为了学习。
+         * 如果不 sleep，Java 消费一条消息可能只需要几毫秒，
+         * Ready → Unacked → ACK整个过程太快，
+         * 你在 RabbitMQ Management 页面根本看不到。
+         */
+        System.out.println("Consumer 正在处理消息，故意等待 10 秒...");
+        Thread.sleep(10000);
+
+         /*
+         * 方法正常执行结束，当前 Spring AMQP 默认情况下，消费成功之后会自动向 RabbitMQ ACK。
+         * RabbitMQ 收到 ACK 后：这条消息就会从 Queue 中删除。
+         */
+        //System.out.println("Consumer 消息处理完成：" + message);
+    }
+}
