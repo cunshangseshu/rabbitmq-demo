@@ -2,7 +2,6 @@ package com.example.controller;
 
 
 import com.example.producer.DemoMessageProducer;
-import jakarta.annotation.Resources;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -11,15 +10,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/demo")
 public class DemoMessageController {
-    /**
-     * 注入我们刚刚创建的消息生产者。
-     */
+    //注入我们刚刚创建的消息生产者。
     private final DemoMessageProducer demoMessageProducer;
-
-    /**
-     * 构造器注入 Producer。
-     *
-     */
     public DemoMessageController(DemoMessageProducer demoMessageProducer) {
         this.demoMessageProducer = demoMessageProducer;
     }
@@ -46,5 +38,21 @@ public class DemoMessageController {
          *  这个返回值不是 RabbitMQ 消息，RabbitMQ 消息已经在上面 Producer 中发送了。
          */
         return "消息发送成功：" + message;
+    }
+
+    /**
+     * 发送 RabbitMQ 消息。
+     * 请求方式：POST
+     * 请求地址：/api/demo/send/ttlTest
+     * 参数：message
+     * 例如：
+     * POST /api/demo/send-ttl?message=这是一个测试ttl的消息
+     *
+     * @param message 前端传进来的消息     @return 返回发送结果
+     */
+    @PostMapping("/send-ttl")
+    public String sendTtlMessage(@RequestParam String message) {
+        demoMessageProducer.sendTtlMessage(message);
+        return "消息发送成功" + message;
     }
 }

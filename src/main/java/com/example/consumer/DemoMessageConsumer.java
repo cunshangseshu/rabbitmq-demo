@@ -1,11 +1,9 @@
 package com.example.consumer;
 
-import com.rabbitmq.client.Channel;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
-
-import java.io.IOException;
 
 /**
  * RabbitMQ 消息消费者
@@ -29,6 +27,7 @@ import java.io.IOException;
  * basicReject()
  * 并决定消息是否重新进入 Queue。
  */
+@Slf4j
 @Component
 public class DemoMessageConsumer {
     /**
@@ -38,56 +37,20 @@ public class DemoMessageConsumer {
      * 消费者需要自己调用 basicAck / basicNack / basicReject。
      */
     @RabbitListener(queues = "demo.hello.queue")
-    public void receiveMessage(String messageBody, Message message, Channel channel) throws InterruptedException, IOException {
-        /*
-         * -- messageBody：
-         * Spring 已经帮我们把 RabbitMQ 消息正文转换成 String。
-         * -- message：这是 Spring AMQP 对一整条 RabbitMQ 消息的封装,它不仅包含消息正文，
-         * 还包含：Routing Key、Exchange、Delivery Tag、Headers、Content Type、Redelivered等信息。
-         */
-
+    public void receiveMessage(String messageBody, Message message) throws InterruptedException {
         System.out.println("Consumer 收到消息" + messageBody);
-
-        /*
-         * deliveryTag：
-         * RabbitMQ 给当前 Channel 中这次消息投递的编号。
-         * Consumer ACK 的时候必须告诉 RabbitMQ：“我确认的是哪一次消息投递。”
-         */
         long deliveryTag = message.getMessageProperties().getDeliveryTag();
         Boolean redelivered = message.getMessageProperties().isRedelivered();
         System.out.println("当前 deliveryTag:" + deliveryTag);
         System.out.println("是否重新投递：" + redelivered);
-        /*
-         * 为了方便观察 RabbitMQ Management，
-         * 我们继续故意等待 10 秒。
-         * 这 10 秒期间：Ready = 0   Unacked = 1
-         */
         System.out.println("开始处理业务，等待3秒...");
         Thread.sleep(3000);
-
-        /*
-         * 如果消息包含 retry，我们故意让业务失败。
-         */
+        //如果消息包含 retry，我们故意让业务失败。
         if (messageBody.contains("retry")) {
             System.out.println("业务处理失败，准备交给 Spring Retry");
-            /*
-             * -- 注意这里：不 basicAck、不 basicNack、不 basicReject，直接把异常抛出去。
-             * -- Spring Retry 才能感知：“这次执行失败了，我应该重试。”
-             */
-            throw new RuntimeException("模拟业务处理失败");
+            log.error("模拟业务处理失败");
         }
-        /*
-         * 如果代码能执行到这里，说明业务处理成功。
-         * 所以手动 ACK。
-         */
-        //channel.basicAck(deliveryTag, false);
-
-        /*
-         * AUTO ACK 模式：
-         * Listener 正常执行结束，Spring 自动帮我们确认消息。
-         * 所以这里不再手动 basicAck。
-         */
-        System.out.println("业务处理成功，手动 ACK：" + messageBody);
+        System.out.println("业务处理成功，Spring 自动 ACK：" + messageBody);
 
 
         /*
