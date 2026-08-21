@@ -12,24 +12,19 @@ import java.util.Map;
 @Slf4j
 @Component
 public class DeadLetterConsumer {
-    @RabbitListener(queues = "demo.dlq.queue")
+    @RabbitListener(queues = "demo.dlq.queue", ackMode = "MANUAL")
     public void receiveDeadMessage(Message message) {
         List<Map<String, ?>> xDeathHeader = message.getMessageProperties().getXDeathHeader();
         if (xDeathHeader != null && !xDeathHeader.isEmpty()) {
             Map<String, ?> xDeath = xDeathHeader.get(0);
+            System.out.println("=========================================");
             System.out.println("死亡原因:" + xDeath.get("reason"));
             System.out.println("死亡次数:" + xDeath.get("count"));
             System.out.println("原 Queue：" + xDeath.get("queue"));
             System.out.println("原 Routing Key:" + xDeath.get("routing-keys"));
             System.out.println("死亡时间：" + xDeath.get("time"));
-            /**
-             * 1. 读取 x-death  √
-             * 2. 取 reason  √
-             * 3. 根据 reason 做分支  rejected、expired、maxlen、delivery_limit  √
-             * 4. 输出不同的处理日志  √
-             * */
             System.out.println("=========================================");
-            System.out.println("收到死信消息："+new String(message.getBody(), StandardCharsets.UTF_8));
+            System.out.println("收到死信消息：" + new String(message.getBody(), StandardCharsets.UTF_8));
             Object reason = xDeath.get("reason");
             if ("rejected".equals(reason)) {
                 log.info("死信原因：消费者拒绝消息，并且 requeue=false;");
@@ -42,8 +37,6 @@ public class DeadLetterConsumer {
             } else {
                 log.warn("未知死信原因：{}", reason);
             }
-
-
         }
     }
 }

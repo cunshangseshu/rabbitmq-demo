@@ -1,6 +1,6 @@
 server:
   # Spring Boot Web 服务端口
-  port: 8080
+  port: 8089
 
 spring:
   application:
@@ -70,7 +70,7 @@ spring:
           # 第一次失败后，等待 1 秒
           initial-interval: 1000ms
           # 下一次等待时间 = 上一次 × 2
-          multiplier: 2
+          multiplier: 1
           # 最长等待不超过 5 秒
           max-interval: 5000ms
 
