@@ -6,33 +6,23 @@ spring:
   application:
     # 应用名称，后续查看日志和监控时会用到
     name: rabbitmq-demo
-
   datasource:
-    # H2 内存数据库；应用关闭后数据清空
-    url: jdbc:h2:mem:rabbitmq_demo
-    driver-class-name: org.h2.Driver
-    username: sa
-    password:
-
-  h2:
-    console:
-      # 开启 H2 网页管理后台
-      enabled: true
-      path: /h2-console
-
+    # 开始用mysql写幕等了,运行在本机 Docker 中
+    url: jdbc:mysql://localhost:3307/rabbitmq_demo?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    username: rabbitmq
+    password: rabbitmq123
+    driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
-      # 学习阶段自动创建和更新数据库表
       ddl-auto: update
     show-sql: true
     properties:
       hibernate:
         format_sql: true
-
+    open-in-view: false
   rabbitmq:
     # RabbitMQ 运行在本机 Docker 中
     host: localhost
-    # Java 客户端连接 RabbitMQ 使用的 AMQP 端口
     port: 5673
     username: study
     password: study123
@@ -45,9 +35,6 @@ spring:
       mandatory: true
     listener:
       simple:
-        # 三次重试之后还是无法正常消费，那就重新入队，一直放在queue上面；
-        # acknowledge-mode: auto
-        # 三次重试后还是不行自动丢弃消息
         acknowledge-mode: auto
         # 每个消费者最多同时持有 20 条未确认消息
         prefetch: 20
@@ -57,10 +44,7 @@ spring:
         max-concurrency: 8
         # 最终消费失败后不要重新塞回原队列
         default-requeue-rejected: false
-
-        # =========================
         # Consumer 消费重试配置
-        # =========================
         retry:
           # 开启消费者重试机制
           enabled: true
@@ -73,11 +57,9 @@ spring:
           multiplier: 1
           # 最长等待不超过 5 秒
           max-interval: 5000ms
-
-
 management:
   endpoints:
     web:
       exposure:
-        # 学习阶段开放健康检查和指标端点
+        # 开放健康检查和指标端点
         include: health,info,metrics

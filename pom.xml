@@ -31,10 +31,7 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
-        <!--
-            Spring AMQP：
-            提供 RabbitTemplate、@RabbitListener、Queue、Exchange 等组件。
-        -->
+        <!--Spring AMQP：提供 RabbitTemplate、@RabbitListener、Queue、Exchange 等组件。-->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-amqp</artifactId>
@@ -52,15 +49,12 @@
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
 
-        <!--
-            学习阶段使用内存数据库，暂时不要求安装 MySQL。
-            应用重启后数据会清空，适合快速实验。
-        -->
-        <dependency>
+        <!--学习阶段使用内存数据库，暂时不要求安装 MySQL。应用重启后数据会清空，适合快速实验。-->
+        <!--<dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
             <scope>runtime</scope>
-        </dependency>
+        </dependency>-->
 
         <!-- 提供健康检查和运行指标。 -->
         <dependency>
@@ -87,6 +81,12 @@
             <groupId>org.springframework.amqp</groupId>
             <artifactId>spring-rabbit-test</artifactId>
             <scope>test</scope>
+        </dependency>
+
+        <!--MySQL依赖-->
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
         </dependency>
     </dependencies>
 

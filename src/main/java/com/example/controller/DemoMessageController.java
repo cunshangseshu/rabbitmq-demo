@@ -46,4 +46,16 @@ public class DemoMessageController {
         demoMessageProducer.sendTtlMessage(message);
         return "消息发送成功" + message;
     }
+
+    /**
+     * RabbitMQ 消息幂等测试接口。很爽的喔~~~小飞棍开罗
+     * <p>
+     * 可以手动传入固定 messageId，
+     * 用于模拟同一条消息被重复投递。
+     */
+    @PostMapping("/send-idempotent")
+    public String sendIdempotentMessage(@RequestParam String message, @RequestParam String messageId) {
+        demoMessageProducer.sendMessageWithId(message, messageId);
+        return "幂等测试消息发送成功：" + message + "，messageId=" + messageId;
+    }
 }

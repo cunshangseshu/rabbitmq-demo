@@ -1,16 +1,11 @@
 services:
   rabbitmq:
-    # RabbitMQ 镜像版本
     image: ${RABBITMQ_IMAGE:-rabbitmq:4.3.4-management}
-    # 容器名字
     container_name: ${RABBITMQ_CONTAINER_NAME:-rabbitmq-learning}
     restart: unless-stopped
     environment:
-      # RabbitMQ 登录账号
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME:-study}
-      # RabbitMQ 登录密码
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-study123}
-      # Virtual Host
       RABBITMQ_DEFAULT_VHOST: ${RABBITMQ_VHOST:-/}
     ports:
       # AMQP
@@ -19,12 +14,25 @@ services:
       # RabbitMQ Management 管理页面
       - "${RABBITMQ_MANAGEMENT_PORT:-15673}:15672"
     volumes:
-      # RabbitMQ 数据持久化
-      # 即使容器删除后重新创建，
-      # Exchange / Queue 等数据仍可以保留
       - ./rabbitmq-data:/var/lib/rabbitmq
     networks:
       - rabbitmq-network
+  mysql:
+    image: mysql:8.0
+    container_name: mysql_learning
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456
+      MYSQL_DATABASE: rabbitmq_demo
+      MYSQL_USER: rabbitmq
+      MYSQL_PASSWORD: rabbitmq123
+    ports:
+      - "3307:3306"
+    volumes:
+      - "./mysql-data:/var/lib/mysql"
+    command:
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
 networks:
   rabbitmq-network:
     driver: bridge

@@ -4,29 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Component;
 
-/**
- * [2026-8-15 12:17]
- * RabbitMQ 消息生产者
- * 这个类的职责非常单纯：
- * 1. 接收业务层传过来的消息;
- * 2. 指定 Exchange;
- * 3. 指定 Routing Key;
- * 4. 调用 RabbitTemplate 把消息发送到 RabbitMQ;
- * 当前完整链路：
- * Controller
- * ↓
- * DemoMessageProducer
- * ↓
- * RabbitTemplate
- * ↓
- * demo.direct.exchange
- * ↓
- * Routing Key = demo.hello
- * ↓
- * demo.hello.queue
- * 注意：
- * 当前我们故意还没有创建 Consumer,所以消息进入 Queue 后会一直处于 Ready 状态。
- */
+import java.util.UUID;
 
 @Slf4j
 @Component
@@ -52,8 +30,12 @@ public class DemoMessageProducer {
      * @param message 要发送到 RabbitMQ 的消息内容
      */
     public void sendMessage(String message) {
-        rabbitTemplate.convertAndSend(DEMO_EXCHANGE_NAME, DEMO_ROUTING_KEY, message);
-        log.info("Producer已发送消息：{};", message);
+        String messageId = UUID.randomUUID().toString();
+        rabbitTemplate.convertAndSend(DEMO_EXCHANGE_NAME, DEMO_ROUTING_KEY, message, rabbitMessage -> {
+            rabbitMessage.getMessageProperties().setMessageId(messageId);
+            return rabbitMessage;
+        });
+        log.info("Producer已发送消息：{};\nmessageId= {}；", message, messageId);
     }
 
     /**
@@ -72,8 +54,22 @@ public class DemoMessageProducer {
      * @param message 要发送到 RabbitMQ 的消息内容
      */
     public void sendRetryMessage(String message) {
+        // TODO 后续统一消息发送方式，确保所有业务消息都有 messageId
         rabbitTemplate.convertAndSend(RETRY_EXCHANGE_NAME, RETRY_ROUTING_KEY, message);
         log.info("Producer 已发送消息到 Retry Queue：{};", message);
+    }
+
+    /**
+     * 幂等测试专用：
+     * 允许手动指定 messageId，
+     * 这样我们可以故意发送两次相同 ID 的消息。
+     */
+    public void sendMessageWithId(String message, String messageId) {
+        rabbitTemplate.convertAndSend(DEMO_EXCHANGE_NAME, DEMO_ROUTING_KEY, message, rabbitMessage -> {
+            rabbitMessage.getMessageProperties().setMessageId(messageId);
+            return rabbitMessage;
+        });
+        log.info("Producer发送幂等测试消息：{}，messageId={}", message, messageId);
     }
 
 }
