@@ -24,7 +24,7 @@ public class RabbitRetryConfig {
     public MessageRecoverer messageRecoverer(RabbitTemplate rabbitTemplate) {
         return (message, cause) -> {
             long retryCount = message.getMessageProperties().getRetryCount();
-            int maxRetryCount = 3;
+            int maxRetryCount = 2;
             if (retryCount < maxRetryCount) {
                 long nextRetryCount = retryCount + 1;
                 Message retryMessage = MessageBuilder.fromMessage(message).build();
