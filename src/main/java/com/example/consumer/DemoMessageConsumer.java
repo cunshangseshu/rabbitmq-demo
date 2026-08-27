@@ -4,7 +4,6 @@ import com.example.service.IdempotentMessageService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
 
 @Slf4j
@@ -27,10 +26,6 @@ public class DemoMessageConsumer {
                 deliveryTag,
                 messageId,
                 redelivered);
-        try {
-            idempotentMessageService.process(messageId, messageBody);
-        } catch (DataIntegrityViolationException e) {
-            log.warn("检测到重复消息，跳过业务处理，messageId={}", messageId);
-        }
+        idempotentMessageService.process(messageId, messageBody);
     }
 }

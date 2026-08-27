@@ -1,39 +1,29 @@
 package com.example.service;
 
-import com.example.entity.MessageRecord;
-import com.example.repository.MessageRecordRepository;
+import com.example.mapper.MessageRecordMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-
 @Slf4j
 @Service
 public class IdempotentMessageService {
-    private final MessageRecordRepository messageRecordRepository;
+    private final MessageRecordMapper messageRecordMapper;
 
-    public IdempotentMessageService(MessageRecordRepository messageRecordRepository) {
-        this.messageRecordRepository = messageRecordRepository;
+    public IdempotentMessageService(MessageRecordMapper messageRecordMapper) {
+        this.messageRecordMapper = messageRecordMapper;
     }
 
-    /**
-     * 并发安全的幂等消费。
-     * 核心思想：
-     * 1. 先尝试 INSERT message_record；
-     * 2. 利用数据库 UNIQUE(message_id) 竞争；
-     * 3. 谁 INSERT 成功，谁才有资格执行业务；
-     * 4. 业务失败，整个事务回滚；
-     * 5. 重复消息 INSERT 失败，则不执行业务。
-     */
+    //改造一下，用mybatis + sql的原子性 按照 ignore的反馈1或0的结果进行操作；
+    // ignore的sql语句可以在xml内看到详情；
     @Transactional
     public void process(String messageId, String messageBody) throws InterruptedException {
-        MessageRecord messageRecord = new MessageRecord();
-        messageRecord.setMessageId(messageId);
-        messageRecord.setStatus("PROCESSING");
-        messageRecord.setCreateTime(LocalDateTime.now());
-        messageRecordRepository.saveAndFlush(messageRecord);
-        log.info("成功抢占 messageId={}，开始执行真正业务", messageId);
+        // 尝试原子抢占 messageId
+        if (messageRecordMapper.tryAcquireMessage(messageId) == 0) {
+            log.warn("重复消息，跳过业务处理，messageId={}", messageId);
+            return;
+        }
+        log.info("原子抢占成功，开始执行真正业务，messageId={}", messageId);
         // 模拟真正业务处理
         Thread.sleep(2000);
         // 模拟业务异常
@@ -41,8 +31,8 @@ public class IdempotentMessageService {
             log.error("业务处理失败，事务准备回滚，messageId={}", messageId);
             throw new RuntimeException("模拟业务处理失败");
         }
-        messageRecord.setStatus("SUCCESS");
-        messageRecordRepository.save(messageRecord);
-        log.info("业务处理成功，事务准备提交，messageId={}", messageId);
+        //该markSuccess的sql语句和参数作用去看xml，有对应的方法id值
+        messageRecordMapper.markSuccess(messageId);
+        log.info("业务处理成功，messageId={}，状态修改为 SUCCESS，事务准备提交", messageId);
     }
 }

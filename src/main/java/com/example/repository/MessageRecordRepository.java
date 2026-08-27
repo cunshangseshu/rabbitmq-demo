@@ -12,4 +12,6 @@ public interface MessageRecordRepository extends JpaRepository<MessageRecord, Lo
 
     //判断某个 messageId 是否已经存在
     boolean existsByMessageId(String messageId);
+
+
 }

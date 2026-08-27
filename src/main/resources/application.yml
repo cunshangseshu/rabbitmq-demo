@@ -57,6 +57,10 @@ spring:
           multiplier: 1
           # 最长等待不超过 5 秒
           max-interval: 5000ms
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
 management:
   endpoints:
     web:

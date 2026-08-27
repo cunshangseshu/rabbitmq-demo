@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.mapper.MessageRecordMapper">
+    <insert id="tryAcquireMessage">
+        <!--这里如果有一行操作成功都会返回1的；-->
+        INSERT IGNORE INTO message_record
+        (
+            message_id,
+            status,
+            create_time
+        )
+        VALUES
+        (
+            #{messageId},
+            'PROCESSING',
+            NOW()
+        )
+    </insert>
+    <update id="markSuccess">
+        update message_record
+        set status = 'SUCCESS'
+        where message_id = #{messageId}
+    </update>
+</mapper>
