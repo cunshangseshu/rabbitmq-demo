@@ -21,11 +21,12 @@ public class DemoMessageConsumer {
         String messageId = message.getMessageProperties().getMessageId();
         Boolean redelivered = message.getMessageProperties().isRedelivered();
         log.info(
-                "Consumer 收到消息:{};\n当前 deliveryTag:{};\n当前 messageId：{}；\n是否重新投递：{};\n开始处理业务，等待2秒...",
+                "\nConsumer 收到消息:{};\n当前 deliveryTag:{};\n当前 messageId：{}；\n是否重新投递：{};\n开始处理业务，等待2秒...",
                 messageBody,
                 deliveryTag,
                 messageId,
-                redelivered);
+                redelivered
+        );
         idempotentMessageService.process(messageId, messageBody);
     }
 }

@@ -29,7 +29,7 @@ public class RabbitRetryConfig {
                 long nextRetryCount = retryCount + 1;
                 Message retryMessage = MessageBuilder.fromMessage(message).build();
                 retryMessage.getMessageProperties().setRetryCount(nextRetryCount);
-                log.warn("原对象={}，新对象={}，retryCount={}→{}",
+                log.warn("\n原对象={}，新对象={}，retryCount={}→{}",
                         System.identityHashCode(message),
                         System.identityHashCode(retryMessage),
                         retryCount,

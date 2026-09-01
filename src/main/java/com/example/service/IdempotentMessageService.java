@@ -20,19 +20,19 @@ public class IdempotentMessageService {
     public void process(String messageId, String messageBody) throws InterruptedException {
         // 尝试原子抢占 messageId
         if (messageRecordMapper.tryAcquireMessage(messageId) == 0) {
-            log.warn("重复消息，跳过业务处理，messageId={}", messageId);
+            log.warn("\n重复消息，跳过业务处理，messageId={}", messageId);
             return;
         }
-        log.info("原子抢占成功，开始执行真正业务，messageId={}", messageId);
+        log.info("\n原子抢占成功，开始执行真正业务，messageId={}", messageId);
         // 模拟真正业务处理
         Thread.sleep(2000);
         // 模拟业务异常
         if (messageBody.contains("retry")) {
-            log.error("业务处理失败，事务准备回滚，messageId={}", messageId);
+            log.error("\n业务处理失败，事务准备回滚，messageId={}", messageId);
             throw new RuntimeException("模拟业务处理失败");
         }
         //该markSuccess的sql语句和参数作用去看xml，有对应的方法id值
         messageRecordMapper.markSuccess(messageId);
-        log.info("业务处理成功，messageId={}，状态修改为 SUCCESS，事务准备提交", messageId);
+        log.info("\n业务处理成功，messageId={}，状态修改为 SUCCESS，事务准备提交", messageId);
     }
 }

@@ -1,6 +1,7 @@
 package com.example.controller;
 
 import com.example.producer.DemoMessageProducer;
+import com.example.service.PublisherRetryService;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -10,9 +11,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/demo")
 public class DemoMessageController {
     private final DemoMessageProducer demoMessageProducer;
+    private final PublisherRetryService publisherRetryService;
 
-    public DemoMessageController(DemoMessageProducer demoMessageProducer) {
+    public DemoMessageController(DemoMessageProducer demoMessageProducer, PublisherRetryService publisherRetryService) {
         this.demoMessageProducer = demoMessageProducer;
+        this.publisherRetryService = publisherRetryService;
     }
 
     /**
@@ -57,5 +60,23 @@ public class DemoMessageController {
     public String sendIdempotentMessage(@RequestParam String message, @RequestParam String messageId) {
         demoMessageProducer.sendMessageWithId(message, messageId);
         return "幂等测试消息发送成功：" + message + "，messageId=" + messageId;
+    }
+
+    /**
+     * RabbitMQ 检测消息发送不成功的可靠性
+     * <p>
+     * 可以手动传入固定 message，用于模拟同一条消息被重复投递。
+     */
+    @PostMapping("/send-unroutable")
+    public String sendUnroutableMessage(@RequestParam String message) {
+        demoMessageProducer.sendUnroutableMessage(message);
+        return "路由失败测试消息已发送：" + message;
+    }
+
+
+    @PostMapping("/retry-failed")
+    public String retryFailedMessages() {
+        publisherRetryService.retryFailedMessages();
+        return "失败消息补偿任务已执行";
     }
 }

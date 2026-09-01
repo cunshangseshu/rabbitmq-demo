@@ -2,6 +2,7 @@ package com.example;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
  * RabbitMQ 学习项目的启动入口。
@@ -17,8 +18,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  *
  */
 @SpringBootApplication
+@EnableScheduling
 public class RabbitmqDemoApplication {
-
     public static void main(String[] args) {
         SpringApplication.run(RabbitmqDemoApplication.class, args);
     }
