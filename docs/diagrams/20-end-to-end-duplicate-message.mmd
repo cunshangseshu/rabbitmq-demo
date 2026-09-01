@@ -1,0 +1,9 @@
+flowchart TD
+    A[同一个 messageId 被投递两次] --> B[Consumer A]
+    A --> C[Consumer B]
+    B --> D[INSERT IGNORE]
+    C --> E[INSERT IGNORE]
+    D --> F[rows=1]
+    E --> G[rows=0]
+    F --> H[执行业务]
+    G --> I[跳过业务]

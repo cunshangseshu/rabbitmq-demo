@@ -1,0 +1,4 @@
+flowchart LR
+    A[最终失败消息] --> B[demo.dlx.exchange]
+    B -->|demo.dead| C[demo.dlq.queue]
+    C --> D[DeadLetterConsumer]

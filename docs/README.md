@@ -1,7 +1,114 @@
-# RabbitMQ 可靠消息完整学习与面试指南
+# RabbitMQ Reliable Messaging Demo
+
+<div align="center">
+
+**Spring Boot + RabbitMQ 可靠消息全链路学习项目**
+
+从消息发送、Broker 确认、路由失败、消费重试、幂等处理，到 Retry Queue、TTL、DLX、DLQ 与失败补偿，一份 README 看完项目、源码思路、测试过程和面试要点。
+
+<img alt="Java 21" src="https://img.shields.io/badge/Java-21-ED8B00?logo=openjdk&logoColor=white"> <img alt="Spring Boot 3.5.13" src="https://img.shields.io/badge/Spring%20Boot-3.5.13-6DB33F?logo=springboot&logoColor=white"> <img alt="RabbitMQ 4.3" src="https://img.shields.io/badge/RabbitMQ-4.3-FF6600?logo=rabbitmq&logoColor=white"> <img alt="MySQL 8.0" src="https://img.shields.io/badge/MySQL-8.0-4479A1?logo=mysql&logoColor=white"> <img alt="Maven 3.9+" src="https://img.shields.io/badge/Maven-3.9+-C71A36?logo=apachemaven&logoColor=white">
+
+</div>
+
+> [!IMPORTANT]
+> 当前公开的 `master` 分支是一次未同步完整的代码快照：文档中使用的 `RabbitPublisherConfirmConfig`、`PublisherRetryService` 和 `PublisherMessageRecordMapper` 尚未出现在源码目录，因此当前版本会在编译阶段失败。本文保留完整设计与学习资料，运行项应在上述源码同步完成后使用。
+
+## 项目定位
+
+这个仓库不是只演示 `convertAndSend()` 的 Hello World，而是围绕消息可靠性回答下面这些问题：
+
+- Producer 如何知道消息是否到达 Broker、是否成功路由到 Queue？
+- Confirm 与 Return 回调乱序时，怎样避免错误覆盖最终状态？
+- Consumer 失败后，怎样组合 JVM 内快速重试和 RabbitMQ 延迟重试？
+- 同一业务消息重复投递时，怎样用唯一键与 `INSERT IGNORE` 原子抢占消费资格？
+- 多轮失败后，怎样进入最终 DLQ，并由消费者手动 ACK？
+- 为什么当前方案只能准确描述为 **At-Least-Once + Consumer 幂等 + Producer 状态追踪与补偿**，而不是 Exactly Once？
+
+## 当前能力与源码状态
+
+| 模块 | 设计目标 | 当前公开源码状态 |
+| --- | --- | --- |
+| RabbitMQ 拓扑 | Exchange、Queue、Binding、TTL、DLX、DLQ | 已提交 |
+| Consumer 重试 | Spring Retry + Retry Queue 延迟回流 | 已提交 |
+| Consumer 幂等 | MySQL 唯一键 + `INSERT IGNORE` + 本地事务 | 已提交 |
+| DLQ 处理 | 最终死信消费 + MANUAL ACK/NACK | 已提交 |
+| Producer 消息登记 | 发送前写入 `PENDING` | 调用代码已提交，Mapper 尚未同步 |
+| Publisher Confirm / Return | 区分 Broker 接收失败与路由失败 | 配置已开启，回调配置类尚未同步 |
+| Producer 自动补偿 | 定时扫描失败记录、限制重试次数并重发 | Controller 调用已提交，Service 尚未同步 |
+| 自动化测试与 CI | 提交后自动证明项目可构建、核心链路可运行 | 待补充 |
+
+## 技术栈
+
+- Java 21
+- Spring Boot 3.5.13
+- Spring AMQP / RabbitMQ 4.3 Management
+- MySQL 8.0
+- MyBatis + Spring Data JPA
+- Maven
+- Docker Compose
+
+## 运行环境
+
+| 服务 | 本机地址 | 默认端口 | Demo 账号 |
+| --- | --- | --- | --- |
+| Spring Boot | `http://localhost:8089` | `8089` | 无 |
+| RabbitMQ AMQP | `localhost:5673` | `5673` | `study / study123` |
+| RabbitMQ Management | `http://localhost:15673` | `15673` | `study / study123` |
+| MySQL | `localhost:3307/rabbitmq_demo` | `3307` | `rabbitmq / rabbitmq123` |
+
+> 上述账号仅用于本机学习环境，不要直接用于公网或生产环境。
+
+## 快速启动
+
+前置要求：JDK 21、Maven 3.9+、Docker 与 Docker Compose。当前公开分支需先补齐上方列出的 3 个源码组件。
+
+```bash
+git clone https://github.com/cunshangseshu/rabbitmq-demo.git
+cd rabbitmq-demo
+docker compose up -d
+mvn spring-boot:run
+```
+
+启动后可检查：
+
+```text
+应用健康检查：http://localhost:8089/actuator/health
+RabbitMQ 控制台：http://localhost:15673
+```
+
+发送一条普通消息：
+
+```bash
+curl -X POST "http://localhost:8089/api/demo/send?message=hello-rabbitmq"
+```
+
+验证相同 `messageId` 的幂等消费：
+
+```bash
+curl -X POST "http://localhost:8089/api/demo/send-idempotent?message=test&messageId=demo-001"
+curl -X POST "http://localhost:8089/api/demo/send-idempotent?message=test&messageId=demo-001"
+```
+
+验证无法路由消息与 Producer 失败状态：
+
+```bash
+curl -X POST "http://localhost:8089/api/demo/send-unroutable?message=route-test"
+```
+
+## 一图了解项目
+
+![RabbitMQ 可靠消息知识地图](./docs/images/01-rabbitmq-knowledge-map.svg)
+
+下面从知识地图、项目架构、源码导航、核心机制、完整测试记录、项目边界一直讲到面试问答；无需再跳转到其他说明文档。
 
 ## 目录
 
+- [项目定位](#项目定位)
+- [当前能力与源码状态](#当前能力与源码状态)
+- [技术栈](#技术栈)
+- [运行环境](#运行环境)
+- [快速启动](#快速启动)
+- [一图了解项目](#一图了解项目)
 - [0. 这份文档怎么用](#0-这份文档怎么用)
 - [1. RabbitMQ 总体知识地图](#1-rabbitmq-总体知识地图)
 - [2. 项目总体架构](#2-项目总体架构)
@@ -27,10 +134,10 @@
 - [24-28. 接口、能力清单、知识地图与结课](#24-接口速查)
 
 > 基于当前 `rabbitmq-demo` 项目整理  
-> 技术栈：Java 21 + Spring Boot 3.5.x + Spring AMQP + RabbitMQ + MySQL + MyBatis  
+> 技术栈：Java 21 + Spring Boot 3.5.13 + Spring AMQP + RabbitMQ + MySQL + MyBatis  
 > 文档定位：**项目说明书 + 学习复盘 + 源码导航 + 面试手册**  
 > 当前阶段：RabbitMQ 学习结课版本  
-> 最后整理：2026-08-30
+> 最后整理：2026-09-03
 
 ---
 
@@ -105,7 +212,7 @@
 
 ## 1. RabbitMQ 总体知识地图
 
-![图：01-rabbitmq-knowledge-map](./images/01-rabbitmq-knowledge-map.svg)
+本页顶部的知识地图概括了 Producer、Broker、Consumer、数据库幂等和可靠性边界；下面保留可折叠的 Mermaid 源码，便于修改和复用。
 
 <details>
 <summary>查看 Mermaid 源码</summary>
@@ -153,7 +260,7 @@ mindmap
       Idempotency
 ```
 
-Mermaid 源文件见 `diagrams/` 下同名 `.mmd` 文件。
+Mermaid 源文件见 `docs/diagrams/` 下同名 `.mmd` 文件。
 
 </details>
 
@@ -170,7 +277,7 @@ MySQL 负责“记录状态、实现幂等与补偿依据”
 
 ## 2. 项目总体架构
 
-![图：02-project-architecture](./images/02-project-architecture.svg)
+![图：02-project-architecture](./docs/images/02-project-architecture.svg)
 
 <details>
 <summary>查看 Mermaid 源码</summary>
@@ -206,7 +313,7 @@ flowchart TD
     W --> X[DeadLetterConsumer<br/>MANUAL ACK]
 ```
 
-Mermaid 源文件见 `diagrams/` 下同名 `.mmd` 文件。
+Mermaid 源文件见 `docs/diagrams/` 下同名 `.mmd` 文件。
 
 </details>
 
@@ -216,7 +323,7 @@ Mermaid 源文件见 `diagrams/` 下同名 `.mmd` 文件。
 
 ### 3.1 类关系图
 
-![图：03-source-code-navigation](./images/03-source-code-navigation.svg)
+![图：03-source-code-navigation](./docs/images/03-source-code-navigation.svg)
 
 <details>
 <summary>查看 Mermaid 源码</summary>
@@ -243,7 +350,7 @@ flowchart LR
     DLQ[demo.dlq.queue] --> DLC[DeadLetterConsumer]
 ```
 
-Mermaid 源文件见 `diagrams/` 下同名 `.mmd` 文件。
+Mermaid 源文件见 `docs/diagrams/` 下同名 `.mmd` 文件。
 
 </details>
 
@@ -329,7 +436,7 @@ demo.hello
 
 对应关系：
 
-![图：04-business-topology](./images/04-business-topology.svg)
+![图：04-business-topology](./docs/images/04-business-topology.svg)
 
 <details>
 <summary>查看 Mermaid 源码</summary>
@@ -341,7 +448,7 @@ flowchart LR
     Q --> C[DemoMessageConsumer]
 ```
 
-Mermaid 源文件见 `diagrams/` 下同名 `.mmd` 文件。
+Mermaid 源文件见 `docs/diagrams/` 下同名 `.mmd` 文件。
 
 </details>
 
@@ -375,7 +482,7 @@ Dead Letter Routing Key = demo.hello
 
 所以：
 
-![图：05-retry-queue-ttl-dlx](./images/05-retry-queue-ttl-dlx.svg)
+![图：05-retry-queue-ttl-dlx](./docs/images/05-retry-queue-ttl-dlx.svg)
 
 <details>
 <summary>查看 Mermaid 源码</summary>
@@ -391,7 +498,7 @@ flowchart LR
     G --> H[Consumer 再次处理]
 ```
 
-Mermaid 源文件见 `diagrams/` 下同名 `.mmd` 文件。
+Mermaid 源文件见 `docs/diagrams/` 下同名 `.mmd` 文件。
 
 </details>
 
@@ -410,7 +517,7 @@ Routing Key:
 demo.dead
 ```
 
-![图：06-dlq-manual-ack](./images/06-dlq-manual-ack.svg)
+![图：06-dlq-manual-ack](./docs/images/06-dlq-manual-ack.svg)
 
 <details>
 <summary>查看 Mermaid 源码</summary>
@@ -422,13 +529,16 @@ flowchart LR
     C --> D[DeadLetterConsumer]
 ```
 
-Mermaid 源文件见 `diagrams/` 下同名 `.mmd` 文件。
+Mermaid 源文件见 `docs/diagrams/` 下同名 `.mmd` 文件。
 
 </details>
 
 ---
 
 ## 5. Producer 可靠发送
+
+> [!NOTE]
+> 第 5～8 章记录的是 Producer 可靠发送的完整设计与已经整理好的参考实现；当前公开分支缺少顶部状态表列出的 3 个源码组件，不能把这些章节理解为当前 `master` 已经可以运行的证明。
 
 ### 5.1 Producer 面临的真实问题
 
@@ -516,7 +626,7 @@ messageId
 
 它们看起来都存 messageId，但职责不同。
 
-![图：07-messageid-vs-correlationdata](./images/07-messageid-vs-correlationdata.svg)
+![图：07-messageid-vs-correlationdata](./docs/images/07-messageid-vs-correlationdata.svg)
 
 <details>
 <summary>查看 Mermaid 源码</summary>
@@ -534,7 +644,7 @@ flowchart TD
     F --> G[ConfirmCallback 知道是哪一次 publish]
 ```
 
-Mermaid 源文件见 `diagrams/` 下同名 `.mmd` 文件。
+Mermaid 源文件见 `docs/diagrams/` 下同名 `.mmd` 文件。
 
 </details>
 
@@ -630,7 +740,7 @@ RabbitMQ Broker
 Broker 有没有确认收到？
 ```
 
-![图：08-publisher-confirm](./images/08-publisher-confirm.svg)
+![图：08-publisher-confirm](./docs/images/08-publisher-confirm.svg)
 
 <details>
 <summary>查看 Mermaid 源码</summary>
@@ -645,7 +755,7 @@ sequenceDiagram
     R-->>C: ack=true / ack=false
 ```
 
-Mermaid 源文件见 `diagrams/` 下同名 `.mmd` 文件。
+Mermaid 源文件见 `docs/diagrams/` 下同名 `.mmd` 文件。
 
 </details>
 
@@ -737,7 +847,7 @@ replyText = NO_ROUTE
 
 这是最容易混的点之一。
 
-![图：09-confirm-and-return](./images/09-confirm-and-return.svg)
+![图：09-confirm-and-return](./docs/images/09-confirm-and-return.svg)
 
 <details>
 <summary>查看 Mermaid 源码</summary>
@@ -756,7 +866,7 @@ sequenceDiagram
     E-->>RT: 312 NO_ROUTE
 ```
 
-Mermaid 源文件见 `diagrams/` 下同名 `.mmd` 文件。
+Mermaid 源文件见 `docs/diagrams/` 下同名 `.mmd` 文件。
 
 </details>
 
@@ -871,7 +981,7 @@ AND status = 'PENDING'
 
 ### 6.8 Return 先到的完整流程
 
-![图：10-return-before-confirm-race](./images/10-return-before-confirm-race.svg)
+![图：10-return-before-confirm-race](./docs/images/10-return-before-confirm-race.svg)
 
 <details>
 <summary>查看 Mermaid 源码</summary>
@@ -895,7 +1005,7 @@ sequenceDiagram
     DB-->>C: rows = 0
 ```
 
-Mermaid 源文件见 `diagrams/` 下同名 `.mmd` 文件。
+Mermaid 源文件见 `docs/diagrams/` 下同名 `.mmd` 文件。
 
 </details>
 
@@ -917,7 +1027,7 @@ ROUTE_FAILED
 
 ## 7. Producer 状态机
 
-![图：11-producer-state-machine](./images/11-producer-state-machine.svg)
+![图：11-producer-state-machine](./docs/images/11-producer-state-machine.svg)
 
 <details>
 <summary>查看 Mermaid 源码</summary>
@@ -940,7 +1050,7 @@ stateDiagram-v2
     RETRY_EXHAUSTED --> [*]
 ```
 
-Mermaid 源文件见 `diagrams/` 下同名 `.mmd` 文件。
+Mermaid 源文件见 `docs/diagrams/` 下同名 `.mmd` 文件。
 
 </details>
 
@@ -1134,7 +1244,7 @@ continue;
 
 ### 8.6 Producer 补偿流程
 
-![图：12-producer-compensation](./images/12-producer-compensation.svg)
+![图：12-producer-compensation](./docs/images/12-producer-compensation.svg)
 
 <details>
 <summary>查看 Mermaid 源码</summary>
@@ -1155,7 +1265,7 @@ flowchart TD
     J -->|Nack| M[NACK_FAILED]
 ```
 
-Mermaid 源文件见 `diagrams/` 下同名 `.mmd` 文件。
+Mermaid 源文件见 `docs/diagrams/` 下同名 `.mmd` 文件。
 
 </details>
 
@@ -1414,7 +1524,7 @@ concurrency = 2
 
 两个 Consumer 同时收到相同 messageId：
 
-![图：13-consumer-idempotency-race](./images/13-consumer-idempotency-race.svg)
+![图：13-consumer-idempotency-race](./docs/images/13-consumer-idempotency-race.svg)
 
 <details>
 <summary>查看 Mermaid 源码</summary>
@@ -1434,7 +1544,7 @@ sequenceDiagram
     B->>B: 执行业务
 ```
 
-Mermaid 源文件见 `diagrams/` 下同名 `.mmd` 文件。
+Mermaid 源文件见 `docs/diagrams/` 下同名 `.mmd` 文件。
 
 </details>
 
@@ -1491,7 +1601,7 @@ message_id 唯一约束
 
 ### 10.6 原子抢占流程
 
-![图：14-insert-ignore-atomic-claim](./images/14-insert-ignore-atomic-claim.svg)
+![图：14-insert-ignore-atomic-claim](./docs/images/14-insert-ignore-atomic-claim.svg)
 
 <details>
 <summary>查看 Mermaid 源码</summary>
@@ -1512,7 +1622,7 @@ sequenceDiagram
     B->>B: 跳过重复消息
 ```
 
-Mermaid 源文件见 `diagrams/` 下同名 `.mmd` 文件。
+Mermaid 源文件见 `docs/diagrams/` 下同名 `.mmd` 文件。
 
 </details>
 
@@ -1784,7 +1894,7 @@ Retry Queue
 
 ### 12.2 双层 Retry
 
-![图：15-spring-retry-and-retry-queue](./images/15-spring-retry-and-retry-queue.svg)
+![图：15-spring-retry-and-retry-queue](./docs/images/15-spring-retry-and-retry-queue.svg)
 
 <details>
 <summary>查看 Mermaid 源码</summary>
@@ -1801,7 +1911,7 @@ flowchart TD
     H --> A
 ```
 
-Mermaid 源文件见 `diagrams/` 下同名 `.mmd` 文件。
+Mermaid 源文件见 `docs/diagrams/` 下同名 `.mmd` 文件。
 
 </details>
 
@@ -2113,7 +2223,7 @@ requeue=true
 
 ## 13. 两张数据库表职责
 
-![图：16-database-table-responsibilities](./images/16-database-table-responsibilities.svg)
+![图：16-database-table-responsibilities](./docs/images/16-database-table-responsibilities.svg)
 
 <details>
 <summary>查看 Mermaid 源码</summary>
@@ -2132,7 +2242,7 @@ flowchart LR
     CM --> G[消费状态]
 ```
 
-Mermaid 源文件见 `diagrams/` 下同名 `.mmd` 文件。
+Mermaid 源文件见 `docs/diagrams/` 下同名 `.mmd` 文件。
 
 </details>
 
@@ -2195,7 +2305,7 @@ message_record
 
 ### 14.1 正常成功
 
-![图：17-end-to-end-success](./images/17-end-to-end-success.svg)
+![图：17-end-to-end-success](./docs/images/17-end-to-end-success.svg)
 
 <details>
 <summary>查看 Mermaid 源码</summary>
@@ -2217,7 +2327,7 @@ flowchart TD
     M --> N[SUCCESS]
 ```
 
-Mermaid 源文件见 `diagrams/` 下同名 `.mmd` 文件。
+Mermaid 源文件见 `docs/diagrams/` 下同名 `.mmd` 文件。
 
 </details>
 
@@ -2225,7 +2335,7 @@ Mermaid 源文件见 `diagrams/` 下同名 `.mmd` 文件。
 
 ### 14.2 路由失败
 
-![图：18-end-to-end-route-failure](./images/18-end-to-end-route-failure.svg)
+![图：18-end-to-end-route-failure](./docs/images/18-end-to-end-route-failure.svg)
 
 <details>
 <summary>查看 Mermaid 源码</summary>
@@ -2246,7 +2356,7 @@ flowchart TD
     L --> M[再次 publish]
 ```
 
-Mermaid 源文件见 `diagrams/` 下同名 `.mmd` 文件。
+Mermaid 源文件见 `docs/diagrams/` 下同名 `.mmd` 文件。
 
 </details>
 
@@ -2254,7 +2364,7 @@ Mermaid 源文件见 `diagrams/` 下同名 `.mmd` 文件。
 
 ### 14.3 消费持续失败
 
-![图：19-end-to-end-consume-failure](./images/19-end-to-end-consume-failure.svg)
+![图：19-end-to-end-consume-failure](./docs/images/19-end-to-end-consume-failure.svg)
 
 <details>
 <summary>查看 Mermaid 源码</summary>
@@ -2276,7 +2386,7 @@ flowchart TD
     L --> M[MANUAL ACK]
 ```
 
-Mermaid 源文件见 `diagrams/` 下同名 `.mmd` 文件。
+Mermaid 源文件见 `docs/diagrams/` 下同名 `.mmd` 文件。
 
 </details>
 
@@ -2284,7 +2394,7 @@ Mermaid 源文件见 `diagrams/` 下同名 `.mmd` 文件。
 
 ### 14.4 重复消息
 
-![图：20-end-to-end-duplicate-message](./images/20-end-to-end-duplicate-message.svg)
+![图：20-end-to-end-duplicate-message](./docs/images/20-end-to-end-duplicate-message.svg)
 
 <details>
 <summary>查看 Mermaid 源码</summary>
@@ -2301,7 +2411,7 @@ flowchart TD
     G --> I[跳过业务]
 ```
 
-Mermaid 源文件见 `diagrams/` 下同名 `.mmd` 文件。
+Mermaid 源文件见 `docs/diagrams/` 下同名 `.mmd` 文件。
 
 </details>
 
@@ -2460,7 +2570,7 @@ DLQ 消息处理成功，已手动 ACK
 
 正确思路：
 
-![图：21-backlog-response](./images/21-backlog-response.svg)
+![图：21-backlog-response](./docs/images/21-backlog-response.svg)
 
 <details>
 <summary>查看 Mermaid 源码</summary>
@@ -2480,7 +2590,7 @@ flowchart TD
     I --> J[观察下游容量]
 ```
 
-Mermaid 源文件见 `diagrams/` 下同名 `.mmd` 文件。
+Mermaid 源文件见 `docs/diagrams/` 下同名 `.mmd` 文件。
 
 </details>
 
@@ -2773,7 +2883,7 @@ PENDING 超时扫描
 
 典型：
 
-![图：22-transactional-outbox-future](./images/22-transactional-outbox-future.svg)
+![图：22-transactional-outbox-future](./docs/images/22-transactional-outbox-future.svg)
 
 <details>
 <summary>查看 Mermaid 源码</summary>
@@ -2791,7 +2901,7 @@ flowchart TD
     G --> H[Outbox 标记已发送]
 ```
 
-Mermaid 源文件见 `diagrams/` 下同名 `.mmd` 文件。
+Mermaid 源文件见 `docs/diagrams/` 下同名 `.mmd` 文件。
 
 </details>
 
@@ -3462,7 +3572,7 @@ POST /api/demo/send-unroutable?message=route-test
 
 ---
 
-## 25. 最终能力清单
+## 25. 目标能力清单与公开源码状态
 
 - [x] Producer
 - [x] Consumer
@@ -3471,21 +3581,21 @@ POST /api/demo/send-unroutable?message=route-test
 - [x] Binding
 - [x] Routing Key
 - [x] Direct Exchange
-- [x] Publisher Confirm
-- [x] Publisher Returns
+- [ ] Publisher Confirm（文档完整，回调配置类待同步）
+- [ ] Publisher Returns（文档完整，回调配置类待同步）
 - [x] CorrelationData
 - [x] messageId
-- [x] Producer 状态持久化
-- [x] PENDING
-- [x] CONFIRMED
-- [x] ROUTE_FAILED
-- [x] NACK_FAILED
-- [x] RETRY_EXHAUSTED
-- [x] Confirm / Return 回调乱序保护
-- [x] Producer 自动补偿
-- [x] `@Scheduled`
-- [x] `prepareRetry`
-- [x] retry_count
+- [ ] Producer 状态持久化（Mapper 待同步）
+- [ ] PENDING（调用点已提交，持久化实现待同步）
+- [ ] CONFIRMED（状态更新实现待同步）
+- [ ] ROUTE_FAILED（状态更新实现待同步）
+- [ ] NACK_FAILED（状态更新实现待同步）
+- [ ] RETRY_EXHAUSTED（状态更新实现待同步）
+- [ ] Confirm / Return 回调乱序保护（实现待同步）
+- [ ] Producer 自动补偿（Service 待同步）
+- [ ] `@Scheduled`（补偿任务实现待同步）
+- [ ] `prepareRetry`（Mapper SQL 待同步）
+- [ ] retry_count（Mapper SQL 待同步）
 - [x] Consumer concurrency
 - [x] deliveryTag
 - [x] AUTO ACK
@@ -3511,7 +3621,7 @@ POST /api/demo/send-unroutable?message=route-test
 
 ## 26. 最终知识地图
 
-![图：23-final-knowledge-map](./images/23-final-knowledge-map.svg)
+![图：23-final-knowledge-map](./docs/images/23-final-knowledge-map.svg)
 
 <details>
 <summary>查看 Mermaid 源码</summary>
@@ -3553,7 +3663,7 @@ flowchart TD
     E --> E5[Outbox - Future]
 ```
 
-Mermaid 源文件见 `diagrams/` 下同名 `.mmd` 文件。
+Mermaid 源文件见 `docs/diagrams/` 下同名 `.mmd` 文件。
 
 </details>
 
@@ -3659,3 +3769,4 @@ Publisher 批量 Confirm
 ```text
 Apache Kafka
 ```
+

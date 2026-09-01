@@ -1,0 +1,19 @@
+flowchart LR
+    C[DemoMessageController] --> P[DemoMessageProducer]
+    P --> PC[RabbitPublisherConfirmConfig]
+    P --> PM[PublisherMessageRecordMapper]
+
+    DMC[DemoMessageConsumer] --> IMS[IdempotentMessageService]
+    IMS --> MM[MessageRecordMapper]
+
+    RC[RabbitRetryConfig] --> RE[Retry Exchange / Queue]
+    RE --> DMC
+
+    PRS[PublisherRetryService] --> PM
+    PRS --> RT[RabbitTemplate]
+
+    RTC[RabbitTopologyConfig] --> EX[Exchanges]
+    RTC --> QU[Queues]
+    RTC --> BI[Bindings]
+
+    DLQ[demo.dlq.queue] --> DLC[DeadLetterConsumer]

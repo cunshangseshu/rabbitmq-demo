@@ -1,0 +1,11 @@
+flowchart LR
+    P[Producer] --> PM[(publisher_message_record)]
+    C[Consumer] --> CM[(message_record)]
+
+    PM --> A[发送状态]
+    PM --> B[失败原因]
+    PM --> D[补偿次数]
+
+    CM --> E[是否已消费]
+    CM --> F[幂等抢占]
+    CM --> G[消费状态]

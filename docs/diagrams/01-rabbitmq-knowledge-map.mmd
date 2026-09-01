@@ -1,0 +1,40 @@
+mindmap
+  root((RabbitMQ Reliable Messaging))
+    Producer
+      messageId
+      CorrelationData
+      PENDING
+      Publisher Confirm
+      Publisher Returns
+      ROUTE_FAILED
+      NACK_FAILED
+      Scheduled Compensation
+      RETRY_EXHAUSTED
+    Broker
+      Exchange
+      Routing Key
+      Binding
+      Queue
+      TTL
+      DLX
+      DLQ
+    Consumer
+      RabbitListener
+      concurrency
+      deliveryTag
+      AUTO ACK
+      MANUAL ACK
+      Spring Retry
+      Idempotency
+    MySQL
+      publisher_message_record
+      message_record
+      UNIQUE
+      INSERT IGNORE
+      Transaction
+    Reliability
+      At-Least-Once
+      Retry
+      Dead Letter
+      Compensation
+      Idempotency

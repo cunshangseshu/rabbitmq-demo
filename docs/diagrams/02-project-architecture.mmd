@@ -1,0 +1,28 @@
+flowchart TD
+    A[HTTP Request] --> B[DemoMessageController]
+    B --> C[DemoMessageProducer]
+    C --> D[生成 messageId]
+    D --> E[(publisher_message_record<br/>PENDING)]
+    E --> F[RabbitTemplate]
+    F --> G[demo.hello.exchange]
+    G --> H{Routing Key}
+    H -->|匹配| I[demo.hello.queue]
+    H -->|不匹配| R[ReturnsCallback<br/>ROUTE_FAILED]
+
+    I --> J[DemoMessageConsumer]
+    J --> K[IdempotentMessageService]
+    K --> L[(message_record<br/>INSERT IGNORE)]
+    L --> M{抢占成功?}
+    M -->|是| N[真正业务]
+    M -->|否| O[重复消息<br/>跳过业务]
+
+    N -->|成功| P[SUCCESS]
+    N -->|异常| Q[Spring Retry]
+    Q --> S[Retry Exchange]
+    S --> T[Retry Queue<br/>TTL 5s]
+    T --> U[DLX 回业务 Exchange]
+    U --> I
+
+    Q -->|多轮耗尽| V[Dead Exchange]
+    V --> W[DLQ]
+    W --> X[DeadLetterConsumer<br/>MANUAL ACK]

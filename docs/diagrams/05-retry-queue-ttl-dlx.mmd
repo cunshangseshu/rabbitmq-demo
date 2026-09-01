@@ -1,0 +1,8 @@
+flowchart LR
+    A[业务失败] --> B[demo.retry.exchange]
+    B --> C[demo.retry.queue]
+    C -->|等待 5 秒| D[TTL expired]
+    D --> E[DLX]
+    E --> F[demo.hello.exchange]
+    F --> G[demo.hello.queue]
+    G --> H[Consumer 再次处理]

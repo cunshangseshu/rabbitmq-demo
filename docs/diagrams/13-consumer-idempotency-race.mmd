@@ -1,0 +1,12 @@
+sequenceDiagram
+    participant A as Consumer A
+    participant B as Consumer B
+    participant DB as MySQL
+
+    A->>DB: SELECT messageId
+    B->>DB: SELECT messageId
+    DB-->>A: 不存在
+    DB-->>B: 不存在
+
+    A->>A: 执行业务
+    B->>B: 执行业务

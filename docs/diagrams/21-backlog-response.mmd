@@ -1,0 +1,12 @@
+flowchart TD
+    A[发现 Queue backlog] --> B[先定位原因]
+    B --> C{生产突然增大?}
+    B --> D{消费能力下降?}
+    B --> E{下游变慢?}
+
+    C --> F[临时限流 / 削峰]
+    D --> G[扩容 Consumer]
+    E --> H[优化 DB / RPC / 外部依赖]
+
+    G --> I[提高 concurrency]
+    I --> J[观察下游容量]

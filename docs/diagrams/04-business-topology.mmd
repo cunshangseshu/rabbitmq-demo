@@ -1,0 +1,4 @@
+flowchart LR
+    P[Producer] --> E[demo.hello.exchange]
+    E -->|demo.hello| Q[demo.hello.queue]
+    Q --> C[DemoMessageConsumer]
