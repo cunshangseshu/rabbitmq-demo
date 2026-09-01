@@ -1,0 +1,10 @@
+flowchart TD
+    M[业务 messageId] --> A[MessageProperties.messageId]
+    M --> B[CorrelationData.id]
+
+    A --> C[跟随消息本体]
+    C --> D[Consumer]
+    C --> E[幂等]
+
+    B --> F[只服务于 Publisher Confirm]
+    F --> G[ConfirmCallback 知道是哪一次 publish]

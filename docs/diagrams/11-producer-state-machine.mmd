@@ -1,0 +1,15 @@
+stateDiagram-v2
+    [*] --> PENDING
+
+    PENDING --> CONFIRMED: Confirm ack=true
+    PENDING --> NACK_FAILED: Confirm ack=false
+    PENDING --> ROUTE_FAILED: Return / NO_ROUTE
+
+    ROUTE_FAILED --> PENDING: prepareRetry
+    NACK_FAILED --> PENDING: prepareRetry
+
+    ROUTE_FAILED --> RETRY_EXHAUSTED: retry_count >= 3
+    NACK_FAILED --> RETRY_EXHAUSTED: retry_count >= 3
+
+    CONFIRMED --> [*]
+    RETRY_EXHAUSTED --> [*]

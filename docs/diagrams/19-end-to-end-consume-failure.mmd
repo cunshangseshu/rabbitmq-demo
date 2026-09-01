@@ -1,0 +1,14 @@
+flowchart TD
+    A[业务 Queue] --> B[Consumer]
+    B --> C[业务失败]
+    C --> D[Spring Retry]
+    D --> E{还失败?}
+    E -->|是| F[MessageRecoverer]
+    F --> G[Retry Queue]
+    G --> H[TTL 5s]
+    H --> I[DLX 回业务 Queue]
+    I --> B
+    F -->|达到最大轮数| J[Dead Exchange]
+    J --> K[DLQ]
+    K --> L[DeadLetterConsumer]
+    L --> M[MANUAL ACK]

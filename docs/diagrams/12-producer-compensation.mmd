@@ -1,0 +1,13 @@
+flowchart TD
+    A[Scheduled 扫描] --> B{是否达到最大次数?}
+    B -->|是| C[RETRY_EXHAUSTED]
+    B -->|否| D[findRetryableMessages]
+    D --> E[prepareRetry]
+    E --> F{rows == 1?}
+    F -->|否| G[跳过]
+    F -->|是| H[PENDING + retry_count+1]
+    H --> I[带原 messageId + CorrelationData 重新 publish]
+    I --> J{发送结果}
+    J -->|Confirm success| K[CONFIRMED]
+    J -->|NO_ROUTE| L[ROUTE_FAILED]
+    J -->|Nack| M[NACK_FAILED]

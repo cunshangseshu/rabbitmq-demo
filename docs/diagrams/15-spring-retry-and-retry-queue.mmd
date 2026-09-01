@@ -1,0 +1,9 @@
+flowchart TD
+    A[Consumer 第一次执行] -->|失败| B[Spring Retry]
+    B -->|再次失败| C[MessageRecoverer]
+    C --> D[Retry Exchange]
+    D --> E[Retry Queue]
+    E -->|TTL 5 秒| F[DLX]
+    F --> G[Business Exchange]
+    G --> H[Business Queue]
+    H --> A

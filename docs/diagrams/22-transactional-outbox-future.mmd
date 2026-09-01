@@ -1,0 +1,10 @@
+flowchart TD
+    A[业务事务] --> B[(业务表)]
+    A --> C[(Outbox 表)]
+    B --> D[同一个本地事务提交]
+    C --> D
+
+    D --> E[后台 Publisher]
+    E --> F[RabbitMQ]
+    F --> G[Confirm]
+    G --> H[Outbox 标记已发送]

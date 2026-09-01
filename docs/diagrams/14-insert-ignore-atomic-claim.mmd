@@ -1,0 +1,13 @@
+sequenceDiagram
+    participant A as Consumer A
+    participant B as Consumer B
+    participant DB as MySQL
+
+    A->>DB: INSERT IGNORE messageId=001
+    B->>DB: INSERT IGNORE messageId=001
+
+    DB-->>A: rows=1
+    DB-->>B: rows=0
+
+    A->>A: 执行真正业务
+    B->>B: 跳过重复消息

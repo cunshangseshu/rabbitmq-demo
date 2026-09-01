@@ -1,0 +1,11 @@
+sequenceDiagram
+    participant P as Producer
+    participant R as Broker
+    participant E as Exchange
+    participant C as ConfirmCallback
+    participant RT as ReturnsCallback
+
+    P->>R: publish(message)
+    R-->>C: ack=true
+    R->>E: 尝试路由
+    E-->>RT: 312 NO_ROUTE

@@ -1,0 +1,13 @@
+flowchart TD
+    A[HTTP /send-unroutable] --> B[Producer]
+    B --> C[PENDING]
+    C --> D[wrong routingKey]
+    D --> E[Broker]
+    E --> F[Confirm ack=true]
+    E --> G[Return 312 NO_ROUTE]
+    G --> H[ROUTE_FAILED]
+    F --> I[尝试 PENDING->CONFIRMED]
+    I --> J[rows=0]
+    H --> K[Scheduled Compensation]
+    K --> L[prepareRetry]
+    L --> M[再次 publish]

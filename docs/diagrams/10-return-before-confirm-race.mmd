@@ -1,0 +1,16 @@
+sequenceDiagram
+    participant P as Producer
+    participant DB as MySQL
+    participant R as RabbitMQ
+    participant RT as ReturnsCallback
+    participant C as ConfirmCallback
+
+    P->>DB: INSERT PENDING
+    P->>R: publish wrong routingKey
+
+    R-->>RT: 312 NO_ROUTE
+    RT->>DB: PENDING -> ROUTE_FAILED
+
+    R-->>C: ack=true
+    C->>DB: UPDATE ... WHERE status=PENDING
+    DB-->>C: rows = 0

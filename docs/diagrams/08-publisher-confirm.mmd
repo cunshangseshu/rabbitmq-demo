@@ -1,0 +1,7 @@
+sequenceDiagram
+    participant P as Producer
+    participant R as RabbitMQ Broker
+    participant C as ConfirmCallback
+
+    P->>R: publish(message)
+    R-->>C: ack=true / ack=false
