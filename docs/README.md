@@ -97,7 +97,7 @@ curl -X POST "http://localhost:8089/api/demo/send-unroutable?message=route-test"
 
 ## 一图了解项目
 
-![RabbitMQ 可靠消息知识地图](./docs/images/01-rabbitmq-knowledge-map.svg)
+![RabbitMQ 可靠消息知识地图](./images/01-rabbitmq-knowledge-map.svg)
 
 下面从知识地图、项目架构、源码导航、核心机制、完整测试记录、项目边界一直讲到面试问答；无需再跳转到其他说明文档。
 
@@ -277,7 +277,7 @@ MySQL 负责“记录状态、实现幂等与补偿依据”
 
 ## 2. 项目总体架构
 
-![图：02-project-architecture](./docs/images/02-project-architecture.svg)
+![图：02-project-architecture](./images/02-project-architecture.svg)
 
 <details>
 <summary>查看 Mermaid 源码</summary>
@@ -323,7 +323,7 @@ Mermaid 源文件见 `docs/diagrams/` 下同名 `.mmd` 文件。
 
 ### 3.1 类关系图
 
-![图：03-source-code-navigation](./docs/images/03-source-code-navigation.svg)
+![图：03-source-code-navigation](./images/03-source-code-navigation.svg)
 
 <details>
 <summary>查看 Mermaid 源码</summary>
@@ -436,7 +436,7 @@ demo.hello
 
 对应关系：
 
-![图：04-business-topology](./docs/images/04-business-topology.svg)
+![图：04-business-topology](./images/04-business-topology.svg)
 
 <details>
 <summary>查看 Mermaid 源码</summary>
@@ -482,7 +482,7 @@ Dead Letter Routing Key = demo.hello
 
 所以：
 
-![图：05-retry-queue-ttl-dlx](./docs/images/05-retry-queue-ttl-dlx.svg)
+![图：05-retry-queue-ttl-dlx](./images/05-retry-queue-ttl-dlx.svg)
 
 <details>
 <summary>查看 Mermaid 源码</summary>
@@ -517,7 +517,7 @@ Routing Key:
 demo.dead
 ```
 
-![图：06-dlq-manual-ack](./docs/images/06-dlq-manual-ack.svg)
+![图：06-dlq-manual-ack](./images/06-dlq-manual-ack.svg)
 
 <details>
 <summary>查看 Mermaid 源码</summary>
@@ -626,7 +626,7 @@ messageId
 
 它们看起来都存 messageId，但职责不同。
 
-![图：07-messageid-vs-correlationdata](./docs/images/07-messageid-vs-correlationdata.svg)
+![图：07-messageid-vs-correlationdata](./images/07-messageid-vs-correlationdata.svg)
 
 <details>
 <summary>查看 Mermaid 源码</summary>
@@ -740,7 +740,7 @@ RabbitMQ Broker
 Broker 有没有确认收到？
 ```
 
-![图：08-publisher-confirm](./docs/images/08-publisher-confirm.svg)
+![图：08-publisher-confirm](./images/08-publisher-confirm.svg)
 
 <details>
 <summary>查看 Mermaid 源码</summary>
@@ -847,7 +847,7 @@ replyText = NO_ROUTE
 
 这是最容易混的点之一。
 
-![图：09-confirm-and-return](./docs/images/09-confirm-and-return.svg)
+![图：09-confirm-and-return](./images/09-confirm-and-return.svg)
 
 <details>
 <summary>查看 Mermaid 源码</summary>
@@ -981,7 +981,7 @@ AND status = 'PENDING'
 
 ### 6.8 Return 先到的完整流程
 
-![图：10-return-before-confirm-race](./docs/images/10-return-before-confirm-race.svg)
+![图：10-return-before-confirm-race](./images/10-return-before-confirm-race.svg)
 
 <details>
 <summary>查看 Mermaid 源码</summary>
@@ -1027,7 +1027,7 @@ ROUTE_FAILED
 
 ## 7. Producer 状态机
 
-![图：11-producer-state-machine](./docs/images/11-producer-state-machine.svg)
+![图：11-producer-state-machine](./images/11-producer-state-machine.svg)
 
 <details>
 <summary>查看 Mermaid 源码</summary>
@@ -1244,7 +1244,7 @@ continue;
 
 ### 8.6 Producer 补偿流程
 
-![图：12-producer-compensation](./docs/images/12-producer-compensation.svg)
+![图：12-producer-compensation](./images/12-producer-compensation.svg)
 
 <details>
 <summary>查看 Mermaid 源码</summary>
@@ -1524,7 +1524,7 @@ concurrency = 2
 
 两个 Consumer 同时收到相同 messageId：
 
-![图：13-consumer-idempotency-race](./docs/images/13-consumer-idempotency-race.svg)
+![图：13-consumer-idempotency-race](./images/13-consumer-idempotency-race.svg)
 
 <details>
 <summary>查看 Mermaid 源码</summary>
@@ -1601,7 +1601,7 @@ message_id 唯一约束
 
 ### 10.6 原子抢占流程
 
-![图：14-insert-ignore-atomic-claim](./docs/images/14-insert-ignore-atomic-claim.svg)
+![图：14-insert-ignore-atomic-claim](./images/14-insert-ignore-atomic-claim.svg)
 
 <details>
 <summary>查看 Mermaid 源码</summary>
@@ -1894,7 +1894,7 @@ Retry Queue
 
 ### 12.2 双层 Retry
 
-![图：15-spring-retry-and-retry-queue](./docs/images/15-spring-retry-and-retry-queue.svg)
+![图：15-spring-retry-and-retry-queue](./images/15-spring-retry-and-retry-queue.svg)
 
 <details>
 <summary>查看 Mermaid 源码</summary>
@@ -2223,7 +2223,7 @@ requeue=true
 
 ## 13. 两张数据库表职责
 
-![图：16-database-table-responsibilities](./docs/images/16-database-table-responsibilities.svg)
+![图：16-database-table-responsibilities](./images/16-database-table-responsibilities.svg)
 
 <details>
 <summary>查看 Mermaid 源码</summary>
@@ -2305,7 +2305,7 @@ message_record
 
 ### 14.1 正常成功
 
-![图：17-end-to-end-success](./docs/images/17-end-to-end-success.svg)
+![图：17-end-to-end-success](./images/17-end-to-end-success.svg)
 
 <details>
 <summary>查看 Mermaid 源码</summary>
@@ -2335,7 +2335,7 @@ Mermaid 源文件见 `docs/diagrams/` 下同名 `.mmd` 文件。
 
 ### 14.2 路由失败
 
-![图：18-end-to-end-route-failure](./docs/images/18-end-to-end-route-failure.svg)
+![图：18-end-to-end-route-failure](./images/18-end-to-end-route-failure.svg)
 
 <details>
 <summary>查看 Mermaid 源码</summary>
@@ -2364,7 +2364,7 @@ Mermaid 源文件见 `docs/diagrams/` 下同名 `.mmd` 文件。
 
 ### 14.3 消费持续失败
 
-![图：19-end-to-end-consume-failure](./docs/images/19-end-to-end-consume-failure.svg)
+![图：19-end-to-end-consume-failure](./images/19-end-to-end-consume-failure.svg)
 
 <details>
 <summary>查看 Mermaid 源码</summary>
@@ -2394,7 +2394,7 @@ Mermaid 源文件见 `docs/diagrams/` 下同名 `.mmd` 文件。
 
 ### 14.4 重复消息
 
-![图：20-end-to-end-duplicate-message](./docs/images/20-end-to-end-duplicate-message.svg)
+![图：20-end-to-end-duplicate-message](./images/20-end-to-end-duplicate-message.svg)
 
 <details>
 <summary>查看 Mermaid 源码</summary>
@@ -2570,7 +2570,7 @@ DLQ 消息处理成功，已手动 ACK
 
 正确思路：
 
-![图：21-backlog-response](./docs/images/21-backlog-response.svg)
+![图：21-backlog-response](./images/21-backlog-response.svg)
 
 <details>
 <summary>查看 Mermaid 源码</summary>
@@ -2883,7 +2883,7 @@ PENDING 超时扫描
 
 典型：
 
-![图：22-transactional-outbox-future](./docs/images/22-transactional-outbox-future.svg)
+![图：22-transactional-outbox-future](./images/22-transactional-outbox-future.svg)
 
 <details>
 <summary>查看 Mermaid 源码</summary>
@@ -3621,7 +3621,7 @@ POST /api/demo/send-unroutable?message=route-test
 
 ## 26. 最终知识地图
 
-![图：23-final-knowledge-map](./docs/images/23-final-knowledge-map.svg)
+![图：23-final-knowledge-map](./images/23-final-knowledge-map.svg)
 
 <details>
 <summary>查看 Mermaid 源码</summary>
